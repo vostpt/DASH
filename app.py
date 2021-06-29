@@ -27,8 +27,8 @@ load_figure_template("slate")
 # --------------------- DATA TREATMENT --------------------------
 
 # Read CSV file
-
-df_csv =pd.read_csv('112.csv')
+data_cols = ["id","hour","aerial","terrain","man","district","concelho","familiaName","naturezaName","especieName","status"]
+df_csv =pd.read_csv('112.csv', usecols=data_cols)
 
 # Get JSon 
 
