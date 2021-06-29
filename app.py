@@ -27,8 +27,8 @@ load_figure_template("slate")
 # --------------------- DATA TREATMENT --------------------------
 
 # Read CSV file
-
-df_csv =pd.read_csv('112.csv')
+data_cols = ["id","hour","aerial","terrain","man","district","concelho","familiaName","naturezaName","especieName","status"]
+df_csv =pd.read_csv('112.csv', usecols=data_cols)
 
 # Get JSon 
 
@@ -43,7 +43,7 @@ sourcedata = pd.json_normalize(jsonResponse['data'])
 
 # Slim down dataset by creating a dataframe with only the columns we need 
 
-df_source = sourcedata.loc[:, ['id', 'hour','aerial', 'terrain', 'man', 'district','concelho', 'familiaName','naturezaName', 'especieName','status']]
+df_source = sourcedata.loc[:, data_cols]
 
 # Change the DType of id to a integer 
 
