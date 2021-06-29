@@ -43,7 +43,7 @@ sourcedata = pd.json_normalize(jsonResponse['data'])
 
 # Slim down dataset by creating a dataframe with only the columns we need 
 
-df_source = sourcedata.loc[:, ['id', 'hour','aerial', 'terrain', 'man', 'district','concelho', 'familiaName','naturezaName', 'especieName','status']]
+df_source = sourcedata.loc[:, data_cols]
 
 # Change the DType of id to a integer 
 
