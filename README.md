@@ -9,6 +9,12 @@ The dashboard aims to aggregate information coming from official datasources, vi
 - The dashboard allows for the user to filter data by type, date and date range, district, council, parish 
 - The dashboard should also have an operstional map running with mapbox 
 
+## API CALL EXAMPLE
+
+https://api-dev.fogos.pt/v2/incidents/search?day=2021-06-28&all=1
+
+without `àll` the API will only return forest fires
+
 ## Requirements 
 pip3 install -r requirements.txt to install the required libraries
 
