@@ -1,4 +1,5 @@
 # import main libraries
+from datetime import date
 import pandas as pd 
 import plotly.express as px 
 import time 
@@ -23,6 +24,9 @@ from dash_bootstrap_templates import load_figure_template
 # Get template for layout
 
 load_figure_template("slate")
+
+# reset button clicks
+button_click=0
 
 # --------------------- DATA TREATMENT --------------------------
 
@@ -123,6 +127,22 @@ app.layout = dbc.Container(
            n_intervals=0
         ),
     html.Hr(),
+	dbc.Row(
+		[
+			dcc.DatePickerSingle(
+				id='incidents-date-picker',
+				min_date_allowed=date(2018, 1, 1),
+				max_date_allowed=date.today(),
+				initial_visible_month=date.today(),
+				date=date.today()
+			),
+			html.Div(id='output-container-date-picker-single'),
+
+			html.Button('Sem Data', id='incident-no-date'),
+		]
+	),
+
+   
     # create row
     dbc.Row(
         [
@@ -148,6 +168,8 @@ app.layout = dbc.Container(
 
 # --------------------- CREATE APP CALLBACK  --------------------------
 
+
+
 # Define the outputs (graphs and table) and define the input (time interval)
 
 @app.callback(
@@ -156,13 +178,15 @@ app.layout = dbc.Container(
     Output('graph', 'figure'),
     Output('table_one','children'),
     Output('timeline', 'figure'),
-    [Input('interval-component', "n_intervals")]
-
+    [
+		Input('interval-component', "n_intervals"), 
+		Input('incidents-date-picker', 'date'),
+		Input('incident-no-date', 'n_clicks'),
+	]
  )
 # Define what happens when the callback is triggered
 
-def UpdateFigs(value):
-
+def UpdateFigs(n_intervals, date, n_clicks = 0):
 	# Read CSV 
 
 	df = pd.read_csv('112.csv')
@@ -170,6 +194,17 @@ def UpdateFigs(value):
 	# Get JSon 
 
 	url = "https://api-dev.fogos.pt/v2/incidents/active?all=1"
+
+	if date is not None:
+		url = f"https://api-dev.fogos.pt/v2/incidents/search?day={date}&all=1"
+
+	global button_click
+
+	if n_clicks is not None and n_clicks > button_click:
+		button_click = n_clicks
+		url = "https://api-dev.fogos.pt/v2/incidents/active?all=1"
+	
+	print(url)
 	response  = urllib.request.urlopen(url).read()
 
 	jsonResponse = json.loads(response.decode('utf-8'))
