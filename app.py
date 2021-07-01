@@ -27,7 +27,7 @@ load_figure_template("slate")
 # --------------------- DATA TREATMENT --------------------------
 
 # Read CSV file
-data_cols = ["id","hour","aerial","terrain","man","district","concelho","familiaName","naturezaName","especieName","status"]
+data_cols = ["id","hour","aerial","terrain","man","district","concelho","familiaName","natureza","especieName","status"]
 df_csv =pd.read_csv('112.csv', usecols=data_cols)
 
 # Get JSon 
@@ -83,7 +83,7 @@ df_bar.sort_values(by=['hour'])
 
 # Create dataframe for table 
 
-df_table=df_10[["hour", "district","naturezaName","status","total_meios"]]
+df_table=df_10[["hour", "district","natureza","status","total_meios"]]
 
 # --------------------- Create Elements  --------------------------
 
@@ -97,7 +97,7 @@ table = dbc.Table.from_dataframe(df_table.tail(10), striped=True, bordered=True,
 fig = px.pie(df_10,names='district',values='total_meios',hole=0.7,color_discrete_sequence=px.colors.sequential.Viridis_r)
 fig1= px.pie(df_10,names='concelho',values='total_meios',hole=0.7,color_discrete_sequence=px.colors.sequential.Viridis_r)
 fig2= px.pie(df,names='district',values='total_meios',hole=0.7,color_discrete_sequence=px.colors.sequential.Viridis_r)
-fig3=px.bar(df_bar,x='hour',y='total_meios', color='naturezaName',color_discrete_sequence=px.colors.sequential.Viridis_r)
+fig3=px.bar(df_bar,x='hour',y='total_meios', color='natureza',color_discrete_sequence=px.colors.sequential.Viridis_r)
 
 
 # --------------------- DASH APP STARTS HERE  --------------------------
@@ -169,7 +169,7 @@ def UpdateFigs(value):
 
 	# Get JSon 
 
-	url = "https://emergencias.pt/data"
+	url = "https://api-dev.fogos.pt/v2/incidents/active?all=1"
 	response  = urllib.request.urlopen(url).read()
 
 	jsonResponse = json.loads(response.decode('utf-8'))
@@ -180,7 +180,7 @@ def UpdateFigs(value):
 
 	# Slim down dataset by creating a dataframe with only the columns we need 
 
-	df_new=sourcedata_new.loc[:, ['id', 'hour','aerial', 'terrain', 'man', 'district','concelho', 'familiaName','naturezaName', 'especieName','status']]
+	df_new=sourcedata_new.loc[:, ['id', 'hour','aerial', 'terrain', 'man', 'district','concelho', 'familiaName','natureza', 'especieName','status']]
 
 	# Change the DType of id to a integer 
 
@@ -208,7 +208,7 @@ def UpdateFigs(value):
 
 	# Create a dataframe for the table 
 
-	df_new_table=df_new[["hour", "district","naturezaName","status","total_meios"]]
+	df_new_table=df_new[["hour", "district","natureza","status","total_meios"]]
 
 	# Create a new dataframe for the br graph 
 
