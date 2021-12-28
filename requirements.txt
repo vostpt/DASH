@@ -46,4 +46,4 @@ pandas == 1.2.4
 # dashvpt/tab.py: 3
 plotly == 4.14.3
 
-
+requests~=2.26.0
