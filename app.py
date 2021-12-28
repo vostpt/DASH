@@ -4,22 +4,20 @@ from datetime import date
 # import dash libraries
 import dash
 import dash_bootstrap_components as dbc
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
+from dash.dependencies import Input, Output
+from dash_bootstrap_templates import load_figure_template
+
 import pandas as pd
 import plotly.express as px
 import requests as requests
-from dash.dependencies import Input, Output
-from dash_bootstrap_templates import load_figure_template
 
 # import dash bootstrap components
 
 # Get template for layout
 
 load_figure_template("slate")
-
-# reset button clicks
-button_click = 0
 
 # --------------------- DATA TREATMENT --------------------------
 
@@ -126,15 +124,13 @@ app.layout = dbc.Container(
         dbc.Row(
             [
                 dcc.DatePickerSingle(
+                    clearable=True,
                     id='incidents-date-picker',
                     min_date_allowed=date(2018, 1, 1),
                     max_date_allowed=date.today(),
                     initial_visible_month=date.today(),
                     date=date.today()
-                ),
-                html.Div(id='output-container-date-picker-single'),
-
-                html.Button('Sem Data', id='incident-no-date'),
+                )
             ]
         ),
 
@@ -176,12 +172,11 @@ app.layout = dbc.Container(
     [
         Input('interval-component', "n_intervals"),
         Input('incidents-date-picker', 'date'),
-        Input('incident-no-date', 'n_clicks'),
     ]
 )
 # Define what happens when the callback is triggered
 
-def UpdateFigs(n_intervals, date, n_clicks=0):
+def UpdateFigs(n_intervals, date):
     # Read CSV
 
     df = pd.read_csv('112.csv')
@@ -192,11 +187,7 @@ def UpdateFigs(n_intervals, date, n_clicks=0):
 
     if date is not None:
         url = f"https://api-dev.fogos.pt/v2/incidents/search?day={date}&all=1"
-
-    global button_click
-
-    if n_clicks is not None and n_clicks > button_click:
-        button_click = n_clicks
+    else:
         url = "https://api-dev.fogos.pt/v2/incidents/active?all=1"
 
     print(url)
