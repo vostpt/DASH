@@ -138,4 +138,4 @@ dmypy.json
 /dataSources.local.xml
 
 # IDE Settings
-./.idea
+.idea/
