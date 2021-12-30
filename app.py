@@ -183,8 +183,6 @@ def UpdateFigs(n_intervals, date):
 
     # Get JSon
 
-    url = "https://api-dev.fogos.pt/v2/incidents/active?all=1"
-
     if date is not None:
         url = f"https://api-dev.fogos.pt/v2/incidents/search?day={date}&all=1"
     else:
