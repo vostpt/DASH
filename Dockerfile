@@ -17,8 +17,9 @@ COPY Pipfile .
 COPY Pipfile.lock .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install
 
-
 FROM base AS runtime
+
+EXPOSE 8052
 
 # Copy virtual env from python-deps stage
 COPY --from=python-deps /.venv /.venv
@@ -31,7 +32,6 @@ USER appuser
 
 # Install application into container
 COPY . .
-COPY 112.csv .
 
 # Run the application
 CMD ["python", "app.py"]
