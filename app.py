@@ -2,14 +2,14 @@ from datetime import date
 
 import dash
 import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from dash_bootstrap_templates import load_figure_template
 
-import pandas as pd
-import plotly.express as px
-import requests as requests
+import dataset
 
 # Get template for layout
 
@@ -17,44 +17,11 @@ load_figure_template("slate")
 
 # --------------------- DATA TREATMENT --------------------------
 
-# Read CSV file
-data_cols = ["id", "hour", "aerial", "terrain", "man", "district", "concelho", "familiaName", "natureza", "especieName",
-             "status"]
+df = dataset.create_dataset_top10(None)
 
-# Get JSon 
+# Create a new dataframe for the bar graph
 
-url = "https://api.fogos.pt/v2/incidents/active?fma=1&all=1"
-response = requests.get(url)
-
-jsonResponse = response.json()
-
-# Create dataframe with pandas from json response 
-
-sourcedata = pd.json_normalize(jsonResponse['data'])
-
-# Slim down dataset by creating a dataframe with only the columns we need 
-
-df_source = sourcedata.loc[:, data_cols]
-
-# Change the DType of id to a integer 
-
-df_source["id"] = df_source["id"].astype(int)
-
-# Remove Duplicates if any
-
-df_source.drop_duplicates(subset=['id'], inplace=True, keep='last')
-
-# Create new columns that sums the values of resources for each event 
-
-df_source['total_meios'] = df_source['man'] + df_source['terrain'] + df_source['aerial']
-
-# Create a dataframe with only the last 10 events 
-
-df_10 = df_source.tail(10)
-
-# Create a new dataframe for the bar graph 
-
-df_bar = df_source
+df_bar = df
 
 # Change the hour column to DType Date / Time 
 
@@ -66,7 +33,7 @@ df_bar.sort_values(by=['hour'])
 
 # Create dataframe for table 
 
-df_table = df_source[["hour", "district", "natureza", "status", "total_meios"]].tail(10)
+df_table = df[["hour", "district", "natureza", "status", "total_meios"]].tail(10)
 
 # --------------------- Create Elements  --------------------------
 
@@ -76,11 +43,11 @@ table = dbc.Table.from_dataframe(df_table, striped=True, bordered=True, hover=Tr
 
 # Create Graphs for the layout
 
-fig = px.pie(df_10, names='district', values='total_meios', hole=0.7,
+fig = px.pie(df, names='district', values='total_meios', hole=0.7,
              color_discrete_sequence=px.colors.sequential.Viridis_r)
-fig1 = px.pie(df_10, names='concelho', values='total_meios', hole=0.7,
+fig1 = px.pie(df, names='concelho', values='total_meios', hole=0.7,
               color_discrete_sequence=px.colors.sequential.Viridis_r)
-fig2 = px.pie(df_source, names='district', values='total_meios', hole=0.7,
+fig2 = px.pie(df, names='district', values='total_meios', hole=0.7,
               color_discrete_sequence=px.colors.sequential.Viridis_r)
 fig3 = px.bar(df_bar, x='hour', y='total_meios', color='natureza',
               color_discrete_sequence=px.colors.sequential.Viridis_r)
@@ -160,53 +127,10 @@ app.layout = dbc.Container(
     ]
 )
 # Define what happens when the callback is triggered
+def update_figs(date_updated):
+    df_new = dataset.create_dataset_top10(date_updated)
 
-def UpdateFigs(date):
-    # Read CSV
-
-    # df = pd.read_csv('112.csv')
-
-    # Get JSon
-
-    if date is not None:
-        url = f"https://api.fogos.pt/v2/incidents/active?fma=1&all=1&day={date}"
-    else:
-        url = "https://api.fogos.pt/v2/incidents/active?fma=1&all=1"
-
-    print(url)
-    response = requests.get(url)
-
-    jsonResponse = response.json()
-
-    # Create dataframe with pandas from json response
-
-    sourcedata_new = pd.json_normalize(jsonResponse['data'])
-
-    # Slim down dataset by creating a dataframe with only the columns we need
-
-    df_new = sourcedata_new.loc[:,
-             ['id', 'hour', 'aerial', 'terrain', 'man', 'district', 'concelho', 'familiaName', 'natureza',
-              'especieName', 'status']]
-
-    # Change the DType of id to a integer
-
-    df_new["id"] = df_new["id"].astype(int)
-
-    # Create new column that sums the values of resources for each event
-
-    df_new['total_meios'] = df_new['man'] + df_new['terrain'] + df_new['aerial']
-
-    # Merge duplicates if any
-
-    df_new.drop_duplicates(subset=['id'], inplace=True, keep='last')
-
-    # Create a dataframe with only the last 10 events
-
-    df_new_10 = df_new.tail(10)
-
-    # Create a dataframe for the table
-
-    df_new_table = df_new[["hour", "district", "natureza", "status", "total_meios"]].tail(10)
+    df_new_table = df_new[["hour", "district", "natureza", "status", "total_meios"]]
 
     # Create a new dataframe for the br graph
 
@@ -222,9 +146,9 @@ def UpdateFigs(date):
 
     # --------------------- CREATE GRAPHS AND TABLES   --------------------------
 
-    fig_new = px.pie(df_new_10, names='district', values='total_meios', hole=0.7,
+    fig_new = px.pie(df_new, names='district', values='total_meios', hole=0.7,
                      color_discrete_sequence=px.colors.sequential.Viridis_r)
-    fig_all = px.pie(df_new_10, names='concelho', values='total_meios', hole=0.7,
+    fig_all = px.pie(df_new, names='concelho', values='total_meios', hole=0.7,
                      color_discrete_sequence=px.colors.sequential.Viridis_r)
     fig_total = px.pie(df_new, names='district', values='total_meios', hole=0.7,
                        color_discrete_sequence=px.colors.sequential.Viridis_r)
