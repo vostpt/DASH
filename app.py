@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 import dash
 import dash_bootstrap_components as dbc
@@ -17,58 +17,51 @@ load_figure_template("slate")
 
 # --------------------- DATA TREATMENT --------------------------
 
-df = dataset.create_dataset_top10(None)
+df_rt = dataset.create_dataset(date.today(), True)
 
-# Create a new dataframe for the bar graph
+# Create dataframe for table
+df_table = df_rt[["hour", "district", "natureza", "status", "total_meios"]]
 
-df_bar = df
+# Sort values in the dataframe by Date / Time
+df_table.sort_values(by=['hour'])
 
-# Change the hour column to DType Date / Time 
+# Dataset for historical data
+df_hs = dataset.create_dataset(date.today(), False)
 
-df_bar['hour'] = pd.to_datetime(df_bar.hour)
+# Change the hour column to DType Date / Time
+df_hs['hour'] = pd.to_datetime(df_hs.hour)
 
-# Sort values in the dataframe by Date / Time 
-
-df_bar.sort_values(by=['hour'])
-
-# Create dataframe for table 
-
-df_table = df[["hour", "district", "natureza", "status", "total_meios"]].tail(10)
-
-# --------------------- Create Elements  --------------------------
-
-# Create table 
-
+# Create table
 table = dbc.Table.from_dataframe(df_table, striped=True, bordered=True, hover=True)
 
 # Create Graphs for the layout
-
-fig = px.pie(df, names='district', values='total_meios', hole=0.7,
-             color_discrete_sequence=px.colors.sequential.Viridis_r)
-fig1 = px.pie(df, names='concelho', values='total_meios', hole=0.7,
-              color_discrete_sequence=px.colors.sequential.Viridis_r)
-fig2 = px.pie(df, names='district', values='total_meios', hole=0.7,
-              color_discrete_sequence=px.colors.sequential.Viridis_r)
-fig3 = px.bar(df_bar, x='hour', y='total_meios', color='natureza',
-              color_discrete_sequence=px.colors.sequential.Viridis_r)
+pie_district = px.pie(df_rt, names='district', values='total_meios', hole=0.7,
+                      color_discrete_sequence=px.colors.sequential.Viridis_r)
+pie_concelho = px.pie(df_rt, names='concelho', values='total_meios', hole=0.7,
+                      color_discrete_sequence=px.colors.sequential.Viridis_r)
+pie_district_hs = px.pie(df_hs, names='district', values='total_meios', hole=0.7,
+                         color_discrete_sequence=px.colors.sequential.Viridis_r)
+bar_hs = px.bar(df_hs, x='hour', y='total_meios', color='natureza',
+                color_discrete_sequence=px.colors.sequential.Viridis_r)
 
 # --------------------- DASH APP STARTS HERE  --------------------------
 
-# Define app 
+# Define app
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SLATE], title='VOST Portugal - DASHOARD', update_title=None,
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SLATE], title='VOST Portugal - DASHBOARD', update_title=None,
                 meta_tags=[{'name': 'viewport',
-                            'content': 'width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,'}]
+                            'content': 'width=device-width, initial-scale=1.0, maximum-scale=1.2, '
+                                       'minimum-scale=0.5,'}]
                 )
-# start server 
+# start server
 
 server = app.server
 
-# app layout 
+# app layout
 
 app.layout = dbc.Container(
     [
-        # set update intervals for the three graphs 
+        # set update intervals for the three graphs
         dcc.Interval(
             id='interval-component',
             interval=60 * 1000  # in milliseconds
@@ -90,20 +83,19 @@ app.layout = dbc.Container(
         # create row
         dbc.Row(
             [
-                dbc.Col(dcc.Graph(id='graph_actual', figure=fig, className="h-100"), lg=3),  # First Graph
-                dbc.Col(dcc.Graph(id='graph_all', figure=fig1, className="h-100"), lg=3),  # Second Graph
+                dbc.Col(dcc.Graph(id='graph_actual', figure=pie_district, className="h-100"), lg=3),  # First Graph
+                dbc.Col(dcc.Graph(id='graph_all', figure=pie_concelho, className="h-100"), lg=3),  # Second Graph
                 dbc.Col(id='table_one', children=table)  # Table
             ],
 
         ),
+
         # Create Second row
         dbc.Row(
             [
-                dbc.Col(dcc.Graph(id='graph', figure=fig2, className="h-100"), lg=6),  # Third Graph
-                dbc.Col(dcc.Graph(id='timeline', figure=fig3, className="h-100"), lg=6),  # Fourth Graph
-
+                dbc.Col(dcc.Graph(id='graph', figure=pie_district_hs, className="h-100"), lg=6),  # Third Graph
+                dbc.Col(dcc.Graph(id='timeline', figure=bar_hs, className="h-100"), lg=6),  # Fourth Graph
             ],
-
         ),
     ],
     # set fluid to true to make the layout mobile ready
@@ -127,46 +119,49 @@ app.layout = dbc.Container(
     ]
 )
 # Define what happens when the callback is triggered
-def update_figs(date_updated):
-    df_new = dataset.create_dataset_top10(date_updated)
+def update_figs(date_str_updated):
 
-    df_new_table = df_new[["hour", "district", "natureza", "status", "total_meios"]]
+    year, month, day = date_str_updated.split('-')
+    date_updated = datetime(int(year), int(month), int(day))
+    df_rt_updated = dataset.create_dataset(date_updated, True)
 
-    # Create a new dataframe for the br graph
+    # Create dataframe for table
+    df_table_updated = df_rt[["hour", "district", "natureza", "status", "total_meios"]]
 
-    df_new_bar = df_new
+    # Sort values in the dataframe by Date / Time
+    df_table_updated.sort_values(by=['hour'])
 
-    # Change DType of hour to Date Time
+    # Create table
+    table_updated = dbc.Table.from_dataframe(df_table, striped=True, bordered=True, hover=True)
 
-    df_new_bar['hour'] = pd.to_datetime(df_bar.hour)
+    # Dataset for historical data
+    df_hs_updated = dataset.create_dataset(date_updated, False)
 
-    # Sort dataframe by Date Time (hour column )
-
-    df_new_bar.sort_values(by=['hour'])
+    # Change the hour column to DType Date / Time
+    df_hs_updated['hour'] = pd.to_datetime(df_table.hour)
 
     # --------------------- CREATE GRAPHS AND TABLES   --------------------------
 
-    fig_new = px.pie(df_new, names='district', values='total_meios', hole=0.7,
-                     color_discrete_sequence=px.colors.sequential.Viridis_r)
-    fig_all = px.pie(df_new, names='concelho', values='total_meios', hole=0.7,
-                     color_discrete_sequence=px.colors.sequential.Viridis_r)
-    fig_total = px.pie(df_new, names='district', values='total_meios', hole=0.7,
-                       color_discrete_sequence=px.colors.sequential.Viridis_r)
-    table_new = dbc.Table.from_dataframe(df_new_table, striped=True, bordered=True, hover=True)
-    fig_timeline = px.bar(df_new_bar, x='hour', y='total_meios', color='district',
-                          color_discrete_sequence=px.colors.sequential.Viridis_r)
+    pie_district_updated = px.pie(df_rt_updated, names='district', values='total_meios', hole=0.7,
+                                  color_discrete_sequence=px.colors.sequential.Viridis_r)
+    pie_concelho_updated = px.pie(df_rt_updated, names='concelho', values='total_meios', hole=0.7,
+                                  color_discrete_sequence=px.colors.sequential.Viridis_r)
+    pie_district_hs_updated = px.pie(df_hs_updated, names='district', values='total_meios', hole=0.7,
+                                     color_discrete_sequence=px.colors.sequential.Viridis_r)
+    bar_hs_updated = px.bar(df_hs_updated, x='hour', y='total_meios', color='district',
+                            color_discrete_sequence=px.colors.sequential.Viridis_r)
 
-    # fig_new layout changes
+    # pie_district_updated layout changes
 
-    fig_new.update_layout({
+    pie_district_updated.update_layout({
         'plot_bgcolor': '#282b2f',
         'paper_bgcolor': '#282b2f',
     }
     )
 
-    fig_new.update_layout(showlegend=False)
+    pie_district_updated.update_layout(showlegend=False)
 
-    fig_new.update_layout(
+    pie_district_updated.update_layout(
         title="Recursos Alocados - Top 10 Distritos",
         legend_title="Tipo de Ocorrência",
         font=dict(
@@ -174,26 +169,26 @@ def update_figs(date_updated):
             size=12
         )
     )
-    fig_new.update_traces(textposition='outside', textinfo='percent+label')
+    pie_district_updated.update_traces(textposition='outside', textinfo='percent+label')
 
-    fig_new.update_layout(
+    pie_district_updated.update_layout(
         {
             'plot_bgcolor': '#282b2f',
             'paper_bgcolor': '#282b2f',
         }
     )
 
-    # fig_all layout changes
+    # pie_concelho_updated layout changes
 
-    fig_all.update_layout({
+    pie_concelho_updated.update_layout({
         'plot_bgcolor': '#282b2f',
         'paper_bgcolor': '#282b2f',
     }
     )
 
-    fig_all.update_layout(showlegend=False)
+    pie_concelho_updated.update_layout(showlegend=False)
 
-    fig_all.update_layout(
+    pie_concelho_updated.update_layout(
         title="Recursos Alocados - Top 10 Concelhos",
         legend_title="Tipo de Ocorrência",
         font=dict(
@@ -201,26 +196,26 @@ def update_figs(date_updated):
             size=12
         )
     )
-    fig_all.update_traces(textposition='outside', textinfo='percent+label')
+    pie_concelho_updated.update_traces(textposition='outside', textinfo='percent+label')
 
-    fig_all.update_layout(
+    pie_concelho_updated.update_layout(
         {
             'plot_bgcolor': '#282b2f',
             'paper_bgcolor': '#282b2f',
         }
     )
 
-    # fig_total layout changes
+    # pie_district_hs_updated layout changes
 
-    fig_total.update_layout({
+    pie_district_hs_updated.update_layout({
         'plot_bgcolor': '#282b2f',
         'paper_bgcolor': '#282b2f',
     }
     )
 
-    fig_total.update_layout(showlegend=False)
+    pie_district_hs_updated.update_layout(showlegend=False)
 
-    fig_total.update_layout(
+    pie_district_hs_updated.update_layout(
         title="Recursos Alocados - Histórico",
         legend_title="Tipo de Ocorrência",
         font=dict(
@@ -228,16 +223,16 @@ def update_figs(date_updated):
             size=12
         )
     )
-    fig_total.update_traces(textposition='outside', textinfo='percent+label')
+    pie_district_hs_updated.update_traces(textposition='outside', textinfo='percent+label')
 
-    fig_total.update_layout(
+    pie_district_hs_updated.update_layout(
         {
             'plot_bgcolor': '#282b2f',
             'paper_bgcolor': '#282b2f',
         }
     )
 
-    fig_timeline.update_layout(
+    bar_hs_updated.update_layout(
         {
             'plot_bgcolor': '#282b2f',
             'paper_bgcolor': '#282b2f',
@@ -246,7 +241,7 @@ def update_figs(date_updated):
 
     # Return these elements to the output
 
-    return fig_new, fig_all, fig_total, table_new, fig_timeline
+    return pie_district_updated, pie_concelho_updated, pie_district_hs_updated, table_updated, bar_hs_updated
 
 
 # --------------------- MAKE APP LIVE   --------------------------
